@@ -1,0 +1,39 @@
+name: CI/CD for Microservices
+
+on:
+  push:
+    branches:
+      - develop   # triggers when pushing to develop branch
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker images
+      run: |
+        docker build -t service1:latest ./service1
+        docker build -t service2:latest ./service2
+
+    - name: Test Flask service
+      run: |
+        docker run -d --name test1 -p 5000:5000 service1:latest
+        sleep 5
+        curl -f http://localhost:5000 || exit 1
+        docker stop test1
+
+    - name: Test Node service
+      run: |
+        docker run -d --name test2 -p 3000:3000 service2:latest
+        sleep 5
+        curl -f http://localhost:3000 || exit 1
+        docker stop test2
+
+    - name: Done
+      run: echo "✅ CI Pipeline completed successfully!"
